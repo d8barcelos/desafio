@@ -1,0 +1,50 @@
+# Build outputs
+bin/
+obj/
+out/
+publish/
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# AI assistants
+.claude/
+.cursor/
+.aider*
+.github/copilot-instructions.md
+
+# Rider
+*.DotSettings.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# .NET
+*.pdb
+*.swp
+TestResults/
+coverage.*
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Logs
+*.log
+
+# Local config overrides
+appsettings.Local.json
+.env
+.env.*
+!.env.example
+
+# Docker
+docker-compose.override.yml

@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: orders
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d orders"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__Default: Host=postgres;Port=5432;Database=orders;Username=postgres;Password=postgres
+      Jwt__Issuer: OrderService
+      Jwt__Audience: OrderService.Clients
+      Jwt__Key: docker-compose-secret-key-please-override-with-32+-bytes-of-entropy
+      Jwt__ExpirationMinutes: 60
+    ports:
+      - "0.0.0.0:8080:8080"
+
+volumes:
+  postgres-data:
