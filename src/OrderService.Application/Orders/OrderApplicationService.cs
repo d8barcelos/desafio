@@ -9,7 +9,7 @@ using OrderService.Domain.Entities;
 
 namespace OrderService.Application.Orders;
 
-public sealed class OrderService : IOrderService
+public sealed class OrderApplicationService : IOrderService
 {
     private const int MinPage = 1;
     private const int MinPageSize = 1;
@@ -24,7 +24,7 @@ public sealed class OrderService : IOrderService
     private readonly IUnitOfWork _uow;
     private readonly ICurrentUser _currentUser;
 
-    public OrderService(
+    public OrderApplicationService(
         IOrderRepository orders,
         IProductRepository products,
         IUnitOfWork uow,
@@ -190,28 +190,28 @@ public sealed class OrderService : IOrderService
         return Result.Success();
     }
 
-    private GuidResult ResolveCreateCustomerId(Guid? requested)
+    private Result<Guid> ResolveCreateCustomerId(Guid? requested)
     {
         if (_currentUser.IsAdmin)
         {
             if (requested is null || requested.Value == Guid.Empty)
             {
-                return GuidResult.Failure(ApplicationErrors.Validation("CustomerId is required when creating an order as Admin."));
+                return Result<Guid>.Failure(ApplicationErrors.Validation("CustomerId is required when creating an order as Admin."));
             }
-            return GuidResult.Success(requested.Value);
+            return Result<Guid>.Success(requested.Value);
         }
 
         if (!_currentUser.IsCustomer || _currentUser.CustomerId is null)
         {
-            return GuidResult.Failure(ApplicationErrors.Forbidden());
+            return Result<Guid>.Failure(ApplicationErrors.Forbidden());
         }
 
         if (requested is not null && requested.Value != _currentUser.CustomerId.Value)
         {
-            return GuidResult.Failure(ApplicationErrors.Forbidden());
+            return Result<Guid>.Failure(ApplicationErrors.Forbidden());
         }
 
-        return GuidResult.Success(_currentUser.CustomerId.Value);
+        return Result<Guid>.Success(_currentUser.CustomerId.Value);
     }
 
     private static Result ValidateProductsForCreate(IReadOnlyList<Product> products, CreateOrderRequest request)
@@ -221,13 +221,13 @@ public sealed class OrderService : IOrderService
         {
             if (!productsById.TryGetValue(item.ProductId, out var product))
             {
-                return Result.Failure(ApplicationErrors.NotFound($"Product {item.ProductId}"));
+                return Result.Failure(ApplicationErrors.NotFound("Product"));
             }
 
             if (!string.Equals(product.Currency, request.Currency, StringComparison.Ordinal))
             {
                 return Result.Failure(ApplicationErrors.Validation(
-                    $"Product {product.Id} currency '{product.Currency}' does not match order currency '{request.Currency}'."));
+                    $"Product currency '{product.Currency}' does not match order currency '{request.Currency}'."));
             }
 
             if (product.AvailableQuantity < item.Quantity)
@@ -256,7 +256,7 @@ public sealed class OrderService : IOrderService
         {
             if (!productsById.TryGetValue(item.ProductId, out var product))
             {
-                return Result.Failure(ApplicationErrors.NotFound($"Product {item.ProductId}"));
+                return Result.Failure(ApplicationErrors.NotFound("Product"));
             }
 
             var decrement = product.DecrementStock(item.Quantity);
@@ -308,24 +308,24 @@ public sealed class OrderService : IOrderService
         return _currentUser.IsCustomer && _currentUser.CustomerId == order.CustomerId;
     }
 
-    private GuidNullableResult ResolveListCustomerFilter(Guid? requested)
+    private Result<Guid?> ResolveListCustomerFilter(Guid? requested)
     {
         if (_currentUser.IsAdmin)
         {
-            return GuidNullableResult.Success(requested);
+            return Result<Guid?>.Success(requested);
         }
 
         if (!_currentUser.IsCustomer || _currentUser.CustomerId is null)
         {
-            return GuidNullableResult.Failure(ApplicationErrors.Forbidden());
+            return Result<Guid?>.Failure(ApplicationErrors.Forbidden());
         }
 
         if (requested is not null && requested.Value != _currentUser.CustomerId.Value)
         {
-            return GuidNullableResult.Failure(ApplicationErrors.Forbidden());
+            return Result<Guid?>.Failure(ApplicationErrors.Forbidden());
         }
 
-        return GuidNullableResult.Success(_currentUser.CustomerId);
+        return Result<Guid?>.Success(_currentUser.CustomerId);
     }
 
     private static (int Page, int PageSize) ClampPaging(int page, int pageSize)
@@ -335,39 +335,5 @@ public sealed class OrderService : IOrderService
             ? DefaultPageSize
             : pageSize < MinPageSize ? MinPageSize : pageSize > MaxPageSize ? MaxPageSize : pageSize;
         return (clampedPage, clampedPageSize);
-    }
-
-    private readonly struct GuidResult
-    {
-        public bool IsSuccess { get; }
-        public Guid Value { get; }
-        public Error? Error { get; }
-
-        private GuidResult(bool ok, Guid value, Error? error)
-        {
-            IsSuccess = ok;
-            Value = value;
-            Error = error;
-        }
-
-        public static GuidResult Success(Guid value) => new(true, value, null);
-        public static GuidResult Failure(Error error) => new(false, Guid.Empty, error);
-    }
-
-    private readonly struct GuidNullableResult
-    {
-        public bool IsSuccess { get; }
-        public Guid? Value { get; }
-        public Error? Error { get; }
-
-        private GuidNullableResult(bool ok, Guid? value, Error? error)
-        {
-            IsSuccess = ok;
-            Value = value;
-            Error = error;
-        }
-
-        public static GuidNullableResult Success(Guid? value) => new(true, value, null);
-        public static GuidNullableResult Failure(Error error) => new(false, null, error);
     }
 }

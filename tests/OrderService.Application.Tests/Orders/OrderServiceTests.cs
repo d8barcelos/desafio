@@ -3,9 +3,9 @@ using NSubstitute;
 using NSubstitute.ReturnsExtensions;
 using OrderService.Application.Common.Abstractions;
 using OrderService.Application.Common.Exceptions;
+using OrderService.Application.Orders;
 using OrderService.Application.Orders.Dtos;
 using OrderService.Domain.Entities;
-using OrdersService = OrderService.Application.Orders.OrderService;
 
 namespace OrderService.Application.Tests.Orders;
 
@@ -21,7 +21,7 @@ public class OrderServiceTests
     private static readonly Guid CustomerEntityId = Guid.NewGuid();
     private static readonly Guid OtherCustomerEntityId = Guid.NewGuid();
 
-    private OrdersService BuildSut() => new(_orders, _products, _uow, _currentUser);
+    private OrderApplicationService BuildSut() => new(_orders, _products, _uow, _currentUser);
 
     private void AsAdmin()
     {

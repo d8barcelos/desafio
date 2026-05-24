@@ -8,7 +8,6 @@ using OrderService.Infrastructure.Auth;
 using OrderService.Infrastructure.Persistence;
 using OrderService.Infrastructure.Persistence.Repositories;
 using AuthService = OrderService.Application.Auth.AuthService;
-using OrdersService = OrderService.Application.Orders.OrderService;
 
 namespace OrderService.Infrastructure;
 
@@ -33,7 +32,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, CurrentUser>();
 
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IOrderService, OrdersService>();
+        services.AddScoped<IOrderService, OrderApplicationService>();
 
         return services;
     }
